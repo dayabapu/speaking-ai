@@ -1,52 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>Teachable Machine Speaking AI</title>
+  <title>Speaking AI – Teachable Machine</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0"></script>
+  <!-- Required Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
 </head>
 
 <body>
-  <h2>Teachable Machine – Speaking Prediction</h2>
-  <p>Allow camera access</p>
+  <h2>Speaking AI – Teachable Machine</h2>
+  <button onclick="init()">Start Camera</button>
+  <div id="status">Waiting to start...</div>
+  <div id="webcam-container"></div>
 
-  <video id="webcam" autoplay playsinline width="320" height="240"></video>
-  <h3 id="output">Loading model...</h3>
+<script>
+  // Your model’s URL
+  const URL = "https://teachablemachine.withgoogle.com/models/pyAkC98Rj/";
 
-  <script>
-    const URL = "https://teachablemachine.withgoogle.com/models/pyAkC98Rj/";
+  let model, webcam;
 
-    let model, webcam;
+  async function init() {
+    document.getElementById("status").innerText = "Loading model...";
 
-    async function init() {
-      const modelURL = URL + "model.json";
-      model = await tmImage.load(modelURL);
+    // Load model + metadata
+    const modelURL = URL + "model.json";
+    const metadataURL = URL + "metadata.json";
+    model = await tmImage.load(modelURL, metadataURL);
 
-      const video = document.getElementById("webcam");
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      video.srcObject = stream;
+    // Setup webcam
+    webcam = new tmImage.Webcam(300, 300, true);
+    await webcam.setup(); 
+    await webcam.play();
 
-      webcam = video;
-      document.getElementById("output").innerText = "Model loaded. Predicting...";
-      setInterval(predict, 1500);
-    }
+    document.getElementById("webcam-container").appendChild(webcam.canvas);
+    document.getElementById("status").innerText = "Model loaded!";
 
-    async function predict() {
-      const prediction = await model.predict(webcam);
-      prediction.sort((a, b) => b.probability - a.probability);
+    // Start prediction loop
+    window.requestAnimationFrame(loop);
+  }
 
-      const label = prediction[0].className;
-      document.getElementById("output").innerText = "Prediction: " + label;
+  async function loop() {
+    webcam.update();
+    await model.predict(webcam.canvas);
+    window.requestAnimationFrame(loop);
+  }
+</script>
 
-      let speech = new SpeechSynthesisUtterance(label);
-      speech.lang = "en-IN";
-      speechSynthesis.cancel();
-      speechSynthesis.speak(speech);
-    }
-
-    init();
-  </script>
 </body>
 </html>
