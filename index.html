@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Teachable Machine Speaking AI</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+</head>
+
+<body>
+  <h2>Teachable Machine – Speaking Prediction</h2>
+  <p>Allow camera access</p>
+
+  <video id="webcam" autoplay playsinline width="320" height="240"></video>
+  <h3 id="output">Loading model...</h3>
+
+  <script>
+    const URL = "https://teachablemachine.withgoogle.com/models/pyAkC98Rj/";
+
+    let model, webcam;
+
+    async function init() {
+      const modelURL = URL + "model.json";
+      model = await tmImage.load(modelURL);
+
+      const video = document.getElementById("webcam");
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
+
+      webcam = video;
+      document.getElementById("output").innerText = "Model loaded. Predicting...";
+      setInterval(predict, 1500);
+    }
+
+    async function predict() {
+      const prediction = await model.predict(webcam);
+      prediction.sort((a, b) => b.probability - a.probability);
+
+      const label = prediction[0].className;
+      document.getElementById("output").innerText = "Prediction: " + label;
+
+      let speech = new SpeechSynthesisUtterance(label);
+      speech.lang = "en-IN";
+      speechSynthesis.cancel();
+      speechSynthesis.speak(speech);
+    }
+
+    init();
+  </script>
+</body>
+</html>
